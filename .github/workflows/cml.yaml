@@ -1,24 +1,58 @@
 name: model-training
-on: [push]
+
+on:
+  push:
+  pull_request:
+
+# 🔐 Da permisos para poder comentar en commits/PRs
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
 jobs:
   run:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          lfs: true           # ← keep only if you use Git LFS
 
-      - uses: actions/setup-python@v4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - uses: iterative/setup-cml@v1
-        # test -f data/base_encuestados_v2.csv || { echo "::error file=data/data.csv::Missing data/base_encuestados_v2.csv"; exit 1; }
 
       - name: Train model
         env:
-          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Usa CML_TOKEN si existe (para PRs desde forks); si no, GITHUB_TOKEN
+          REPO_TOKEN: ${{ secrets.CML_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           pip install -r requirements.txt
           python train.py
 
           echo "## Model Metrics" > report.md
           cat metrics.txt >> report.md
-          cml-send-comment report.md
+
+      - name: Publicar reporte como comentario (PR o commit)
+        env:
+          REPO_TOKEN: ${{ secrets.CML_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          # cml send-comment -> DEPRECATED; usar cml comment create
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # Comenta en el PR (requiere pull-requests:write; si es fork, usa PAT en CML_TOKEN)
+            cml comment create --pr --file report.md
+          else
+            # Comenta en el commit de este push
+            cml comment create --commit-sha ${{ github.sha }} --file report.md
+          fi
+
+      - name: Subir artefactos
+        uses: actions/upload-artifact@v4
+        with:
+          name: training-results
+          path: |
+            report.md
+            metrics.txt
