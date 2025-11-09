@@ -15,7 +15,7 @@ import pickle
 
 DATA_PATH = Path(__file__).resolve().parent / "data" / "base_encuestados_v2.csv"
 df = pd.read_csv(DATA_PATH).head(1000)     
-
+CLASS_ORDER = ['DETRACTOR', 'PASIVO', 'PROMOTOR']
 df = df[['Comentarios','NPS']].dropna().copy()
 df['Comentarios'] = df['Comentarios'].apply(lambda x: x.lower())
 df['Comentarios'] = df['Comentarios'].apply(lambda x: re.sub(r'[^a-zA-z0-9\s]', '', x))
@@ -110,3 +110,37 @@ print("\nEvaluation results:\n", metrics_output)
 
 with open('metrics.txt', 'w', encoding='utf-8') as outfile:
     outfile.write(metrics_output)
+
+labels_names = CLASS_ORDER
+conf_mat = confusion_matrix(
+    y_test_labels, y_preds_labels,
+    labels=list(range(len(labels_names)))
+)
+
+support = conf_mat.sum(axis=1)
+
+# Accuracy por label = aciertos de la clase / soporte de la clase
+per_class_acc = np.divide(
+    np.diag(conf_mat), support,
+    out=np.full_like(support, np.nan, dtype=float),
+    where=support > 0
+)
+
+per_label_df = pd.DataFrame({
+    "Label": labels_names,
+    "Support": support,
+    "Accuracy_por_label": per_class_acc
+})
+
+print("\nAccuracy por label (NPS):")
+print(per_label_df.to_string(index=False))
+
+# (opcional) guardar a archivos
+per_label_df.to_csv("outputs/accuracy_por_label.csv", index=False)
+
+# (opcional) añadir al reporte/metrics.txt
+with open("metrics.txt", "a", encoding="utf-8") as f:
+    f.write("\n\n## Accuracy por label (NPS)\n")
+    for lbl, sup, acc in zip(labels_names, support, per_class_acc):
+        acc_str = "NA" if np.isnan(acc) else f"{acc:.4f}"
+        f.write(f"- {lbl}: {acc_str} (support={sup})\n"
