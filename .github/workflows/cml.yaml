@@ -1,0 +1,39 @@
+name: model-training
+
+on:
+  push:
+  pull_request:
+
+# 🔐 Da permisos para poder comentar en commits/PRs
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: iterative/setup-cml@v1
+
+      - name: Train model
+        env:
+          # Usa CML_TOKEN si existe (para PRs desde forks); si no, GITHUB_TOKEN
+          REPO_TOKEN: ${{ secrets.CML_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          pip install -r requirements.txt
+          python train.py
+
+
+          echo "## Model Metrics" > report.md
+          cat metrics.txt >> report.md
+          cml-send-comment report.md
