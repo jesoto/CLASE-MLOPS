@@ -111,11 +111,6 @@ print("\nEvaluation results:\n", metrics_output)
 with open('metrics.txt', 'w', encoding='utf-8') as outfile:
     outfile.write(metrics_output)
 
-labels_names = CLASS_ORDER
-conf_mat = confusion_matrix(
-    y_test_labels, y_preds_labels,
-    labels=list(range(len(labels_names)))
-)
 
 import matplotlib.pyplot as plt
 import numpy as np
