@@ -138,9 +138,4 @@ print(per_label_df.to_string(index=False))
 # (opcional) guardar a archivos
 per_label_df.to_csv("outputs/accuracy_por_label.csv", index=False)
 
-# (opcional) añadir al reporte/metrics.txt
-with open("metrics.txt", "a", encoding="utf-8") as f:
-    f.write("\n\n## Accuracy por label (NPS)\n")
-    for lbl, sup, acc in zip(labels_names, support, per_class_acc):
-        acc_str = "NA" if np.isnan(acc) else f"{acc:.4f}"
-        f.write(f"- {lbl}: {acc_str} (support={sup})\n"
+
