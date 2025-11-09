@@ -112,28 +112,3 @@ with open('metrics.txt', 'w', encoding='utf-8') as outfile:
     outfile.write(metrics_output)
 
 
-import matplotlib.pyplot as plt
-import numpy as np
-from sklearn.metrics import confusion_matrix
-
-labels = ['DETRACTOR','PASIVO','PROMOTOR']
-
-# Suponiendo que ya tienes y_test_labels y y_preds_labels
-conf_mat = confusion_matrix(y_test_labels, y_preds_labels, labels=range(len(labels)))
-
-# Accuracy por clase = diagonal / total de esa clase
-support = conf_mat.sum(axis=1)
-per_class_acc = np.diag(conf_mat) / support
-
-plt.figure(figsize=(6,4))
-bars = plt.bar(labels, per_class_acc, color=['#ff6666','#ffcc66','#66cc66'])
-plt.ylim(0,1)
-plt.title('Accuracy por label (NPS)')
-plt.ylabel('Accuracy')
-plt.grid(axis='y', linestyle='--', alpha=0.6)
-for bar, acc in zip(bars, per_class_acc):
-    plt.text(bar.get_x() + bar.get_width()/2, acc + 0.02, f'{acc:.2f}', ha='center', fontsize=10)
-plt.tight_layout()
-plt.savefig('outputs/accuracy_por_label.png', dpi=150)
-plt.close()
-
